@@ -6,6 +6,10 @@ members = [
     "crates/focusvault-db-sqlite",
     "crates/focusvault-server",
 ]
+# Desktop crate requires GTK/WebKit system libraries; build via `cargo tauri build`
+exclude = [
+    "apps/desktop/src-tauri",
+]
 
 [workspace.package]
 version = "0.1.0"
