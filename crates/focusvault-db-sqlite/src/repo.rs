@@ -162,15 +162,73 @@ impl Repository for SqliteRepo {
         let limit = filters.limit.unwrap_or(50);
         let offset = filters.offset.unwrap_or(0);
 
-        let rows = sqlx::query(
-            "SELECT * FROM vault_items ORDER BY pinned DESC, created_at DESC LIMIT ?1 OFFSET ?2",
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(map_db_err)?;
+        // Build dynamic WHERE clauses
+        let mut conditions: Vec<String> = vec![];
+        let mut bind_idx = 1;
 
+        if filters.status.is_some() {
+            conditions.push(format!("status = ?{bind_idx}"));
+            bind_idx += 1;
+        }
+        if filters.priority.is_some() {
+            conditions.push(format!("priority = ?{bind_idx}"));
+            bind_idx += 1;
+        }
+        if filters.source.is_some() {
+            conditions.push(format!("source = ?{bind_idx}"));
+            bind_idx += 1;
+        }
+        if filters.project_id.is_some() {
+            conditions.push(format!("project_id = ?{bind_idx}"));
+            bind_idx += 1;
+        }
+        if let Some(ref query) = filters.query {
+            if !query.trim().is_empty() {
+                conditions.push(format!(
+                    "(title LIKE ?{bind_idx} OR why LIKE ?{bind_idx} OR notes LIKE ?{bind_idx} OR url LIKE ?{bind_idx})"
+                ));
+                bind_idx += 1;
+            }
+        }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
+
+        let sql = format!(
+            "SELECT * FROM vault_items {where_clause} ORDER BY pinned DESC, created_at DESC LIMIT ?{bind_idx} OFFSET ?{}",
+            bind_idx + 1
+        );
+
+        let mut query = sqlx::query(&sql);
+
+        // Bind parameters in same order as conditions
+        if let Some(ref status) = filters.status {
+            let s = serde_json::to_value(status).unwrap();
+            query = query.bind(s.as_str().unwrap().to_string());
+        }
+        if let Some(ref priority) = filters.priority {
+            let p = serde_json::to_value(priority).unwrap();
+            query = query.bind(p.as_str().unwrap().to_string());
+        }
+        if let Some(ref source) = filters.source {
+            let s = serde_json::to_value(source).unwrap();
+            query = query.bind(s.as_str().unwrap().to_string());
+        }
+        if let Some(ref project_id) = filters.project_id {
+            query = query.bind(project_id.to_string());
+        }
+        if let Some(ref q) = filters.query {
+            if !q.trim().is_empty() {
+                query = query.bind(format!("%{q}%"));
+            }
+        }
+
+        query = query.bind(limit).bind(offset);
+
+        let rows = query.fetch_all(&self.pool).await.map_err(map_db_err)?;
         Ok(rows.iter().map(row_to_vault_item).collect())
     }
 

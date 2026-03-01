@@ -17,14 +17,8 @@ use crate::state::AppState;
 pub async fn list_projects(
     State(state): State<AppState>,
 ) -> ApiResult<Json<Vec<Project>>> {
-    let projects = state
-        .vault
-        .stale_items(0)
-        .await
-        .map_err(ApiError::from)?; // placeholder
-    // TODO: Wire up project service in Phase 2
-    let _ = projects;
-    Ok(Json(vec![]))
+    let projects = state.projects.list().await.map_err(ApiError::from)?;
+    Ok(Json(projects))
 }
 
 #[utoipa::path(
@@ -38,13 +32,11 @@ pub async fn list_projects(
     tag = "projects"
 )]
 pub async fn create_project(
-    State(_state): State<AppState>,
-    Json(_input): Json<CreateProject>,
+    State(state): State<AppState>,
+    Json(input): Json<CreateProject>,
 ) -> ApiResult<(StatusCode, Json<Project>)> {
-    // TODO: Wire up in Phase 2
-    Err(ApiError(focusvault_core::error::DomainError::Internal(
-        "Projects not yet implemented".into(),
-    )))
+    let project = state.projects.create(input).await.map_err(ApiError::from)?;
+    Ok((StatusCode::CREATED, Json(project)))
 }
 
 #[utoipa::path(
@@ -59,12 +51,10 @@ pub async fn create_project(
     tag = "projects"
 )]
 pub async fn update_project(
-    State(_state): State<AppState>,
-    Path(_id): Path<Uuid>,
-    Json(_update): Json<UpdateProject>,
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+    Json(update): Json<UpdateProject>,
 ) -> ApiResult<Json<Project>> {
-    // TODO: Wire up in Phase 2
-    Err(ApiError(focusvault_core::error::DomainError::Internal(
-        "Projects not yet implemented".into(),
-    )))
+    let project = state.projects.update(id, update).await.map_err(ApiError::from)?;
+    Ok(Json(project))
 }

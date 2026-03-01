@@ -1,11 +1,30 @@
 use axum::extract::{Path, Query, State};
 use axum::Json;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Utc};
 
 use focusvault_core::domain::*;
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
+
+/// Get or auto-create today's daily log
+#[utoipa::path(
+    get,
+    path = "/api/v1/logs/today",
+    responses((status = 200, description = "Today's daily log (auto-created if needed)", body = DailyLog)),
+    tag = "daily_logs"
+)]
+pub async fn get_today(
+    State(state): State<AppState>,
+) -> ApiResult<Json<DailyLog>> {
+    let today = Utc::now().date_naive();
+    let log = state
+        .daily_logs
+        .get_or_create(today)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(log))
+}
 
 #[utoipa::path(
     get,

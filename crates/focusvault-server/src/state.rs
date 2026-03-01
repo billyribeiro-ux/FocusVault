@@ -13,6 +13,7 @@ pub struct AppState {
     pub daily_logs: Arc<DailyLogService>,
     pub courses: Arc<CourseService>,
     pub languages: Arc<LanguageService>,
+    pub projects: Arc<ProjectService>,
 }
 
 impl AppState {
@@ -23,7 +24,8 @@ impl AppState {
             missions: Arc::new(MissionService::new(repo.clone())),
             daily_logs: Arc::new(DailyLogService::new(repo.clone())),
             courses: Arc::new(CourseService::new(repo.clone())),
-            languages: Arc::new(LanguageService::new(repo)),
+            languages: Arc::new(LanguageService::new(repo.clone())),
+            projects: Arc::new(ProjectService::new(repo)),
         }
     }
 }

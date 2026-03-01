@@ -26,6 +26,7 @@ use crate::state::AppState;
         missions::create_mission,
         missions::update_mission,
         missions::activate_mission,
+        daily_logs::get_today,
         daily_logs::list_daily_logs,
         daily_logs::upsert_daily_log,
         daily_logs::update_daily_log,
@@ -116,6 +117,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/missions/{id}", patch(missions::update_mission))
         .route("/missions/{id}/activate", post(missions::activate_mission))
         // Daily Logs
+        .route("/logs/today", get(daily_logs::get_today))
         .route(
             "/logs",
             get(daily_logs::list_daily_logs).post(daily_logs::upsert_daily_log),

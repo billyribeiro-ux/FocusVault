@@ -78,11 +78,22 @@ class FocusVaultClient {
 		});
 	}
 
+	async updateMission(id: string, update: unknown) {
+		return this.request<unknown>(`/missions/${id}`, {
+			method: 'PATCH',
+			body: JSON.stringify(update)
+		});
+	}
+
 	async activateMission(id: string) {
 		return this.request<unknown>(`/missions/${id}/activate`, { method: 'POST' });
 	}
 
 	// ── Daily Logs ──
+
+	async getToday() {
+		return this.request<unknown>('/logs/today');
+	}
 
 	async listDailyLogs(params?: Record<string, string>) {
 		const query = params ? `?${new URLSearchParams(params)}` : '';
@@ -94,6 +105,75 @@ class FocusVaultClient {
 			method: 'POST',
 			body: JSON.stringify(input)
 		});
+	}
+
+	async updateDailyLog(date: string, update: unknown) {
+		return this.request<unknown>(`/logs/${date}`, {
+			method: 'PATCH',
+			body: JSON.stringify(update)
+		});
+	}
+
+	// ── Projects ──
+
+	async listProjects() {
+		return this.request<unknown[]>('/projects');
+	}
+
+	async createProject(input: unknown) {
+		return this.request<unknown>('/projects', {
+			method: 'POST',
+			body: JSON.stringify(input)
+		});
+	}
+
+	async updateProject(id: string, update: unknown) {
+		return this.request<unknown>(`/projects/${id}`, {
+			method: 'PATCH',
+			body: JSON.stringify(update)
+		});
+	}
+
+	// ── Courses ──
+
+	async listCourses() {
+		return this.request<unknown[]>('/courses');
+	}
+
+	async createCourse(input: unknown) {
+		return this.request<unknown>('/courses', {
+			method: 'POST',
+			body: JSON.stringify(input)
+		});
+	}
+
+	async activateCourse(id: string) {
+		return this.request<unknown>(`/courses/${id}/activate`, { method: 'POST' });
+	}
+
+	async completeCourse(id: string) {
+		return this.request<unknown>(`/courses/${id}/complete`, { method: 'POST' });
+	}
+
+	// ── Languages ──
+
+	async listLanguageTracks() {
+		return this.request<unknown[]>('/languages');
+	}
+
+	async createLanguageTrack(input: unknown) {
+		return this.request<unknown>('/languages', {
+			method: 'POST',
+			body: JSON.stringify(input)
+		});
+	}
+
+	async activateLanguageTrack(id: string) {
+		return this.request<unknown>(`/languages/${id}/activate`, { method: 'POST' });
+	}
+
+	async completeLanguageTrack(id: string) {
+		return this.request<unknown>(`/languages/${id}/complete`, { method: 'POST' });
 	}
 
 	// ── Health ──
