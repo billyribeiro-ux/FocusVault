@@ -1,4 +1,5 @@
 use axum::http::header;
+use axum::middleware;
 use axum::routing::{get, patch, post};
 use axum::Router;
 use tower_http::cors::{Any, CorsLayer};
@@ -6,6 +7,7 @@ use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::middleware::optional_auth;
 use crate::routes::*;
 use crate::state::AppState;
 
@@ -41,6 +43,12 @@ use crate::state::AppState;
         projects::list_projects,
         projects::create_project,
         projects::update_project,
+        auth::register,
+        auth::login,
+        auth::me,
+        sync::sync_push,
+        sync::sync_pull,
+        sync::sync_status,
     ),
     components(schemas(
         health::HealthResponse,
@@ -74,6 +82,23 @@ use crate::state::AppState;
         focusvault_core::domain::Project,
         focusvault_core::domain::CreateProject,
         focusvault_core::domain::UpdateProject,
+        focusvault_core::domain::User,
+        focusvault_core::domain::CreateUser,
+        focusvault_core::domain::LoginRequest,
+        focusvault_core::domain::AuthToken,
+        focusvault_core::domain::ApiKey,
+        focusvault_core::domain::CreateApiKey,
+        focusvault_core::domain::ApiKeyCreated,
+        focusvault_core::domain::SyncPushRequest,
+        focusvault_core::domain::SyncPushEvent,
+        focusvault_core::domain::SyncPushResponse,
+        focusvault_core::domain::SyncConflict,
+        focusvault_core::domain::SyncPullRequest,
+        focusvault_core::domain::SyncPullResponse,
+        focusvault_core::domain::SyncEvent,
+        focusvault_core::domain::SyncEntityType,
+        focusvault_core::domain::SyncAction,
+        focusvault_core::domain::SyncStatus,
     )),
     tags(
         (name = "health", description = "Health check"),
@@ -83,6 +108,8 @@ use crate::state::AppState;
         (name = "courses", description = "Course tracking"),
         (name = "languages", description = "Language track management"),
         (name = "projects", description = "Project management"),
+        (name = "auth", description = "Authentication"),
+        (name = "sync", description = "Offline-first sync"),
     )
 )]
 pub struct ApiDoc;
@@ -148,7 +175,17 @@ pub fn create_router(state: AppState) -> Router {
             "/projects",
             get(projects::list_projects).post(projects::create_project),
         )
-        .route("/projects/{id}", patch(projects::update_project));
+        .route("/projects/{id}", patch(projects::update_project))
+        // Auth
+        .route("/auth/register", post(auth::register))
+        .route("/auth/login", post(auth::login))
+        .route("/auth/me", get(auth::me))
+        // Sync
+        .route("/sync/push", post(sync::sync_push))
+        .route("/sync/pull", post(sync::sync_pull))
+        .route("/sync/status", get(sync::sync_status))
+        // Apply optional auth middleware to all API routes
+        .layer(middleware::from_fn(optional_auth));
 
     Router::new()
         .merge(SwaggerUi::new("/api/docs").url("/api/docs/openapi.json", ApiDoc::openapi()))

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FocusVault</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header -->
+      <div class="header">
+        <h1 class="logo">FocusVault</h1>
+        <span id="status-dot" class="status-dot status-checking" title="Checking server..."></span>
+      </div>
+
+      <!-- Tab Count -->
+      <div id="tab-counter" class="tab-counter">
+        <span class="tab-count-label">Open Tabs</span>
+        <div class="tab-count-row">
+          <span id="tab-current" class="tab-current">-</span>
+          <span class="tab-separator">/</span>
+          <span id="tab-limit" class="tab-limit">-</span>
+        </div>
+      </div>
+
+      <!-- Quick Capture Form -->
+      <div class="capture-section">
+        <div class="field">
+          <label for="title">Title</label>
+          <input type="text" id="title" placeholder="Page title..." />
+        </div>
+        <div class="field">
+          <label for="url">URL</label>
+          <input type="text" id="url" placeholder="https://..." readonly />
+        </div>
+        <div class="field">
+          <label for="tags">Tags</label>
+          <input type="text" id="tags" placeholder="comma, separated, tags" />
+        </div>
+        <div class="field">
+          <label for="type">Type</label>
+          <select id="type">
+            <option value="link">Link</option>
+            <option value="note">Note</option>
+            <option value="snippet">Snippet</option>
+          </select>
+        </div>
+        <button id="capture-btn" class="capture-btn">Capture to Vault</button>
+        <p id="feedback" class="feedback"></p>
+      </div>
+
+      <!-- Server Offline Message -->
+      <div id="offline-msg" class="offline-msg" style="display: none">
+        <p>FocusVault server is not running.</p>
+        <p class="hint">Start the server or desktop app first.</p>
+      </div>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

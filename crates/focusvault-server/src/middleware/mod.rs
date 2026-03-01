@@ -1,1 +1,2 @@
-// Auth middleware will be implemented in Phase 6
+pub mod auth;
+pub use auth::optional_auth;
