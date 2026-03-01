@@ -1,0 +1,44 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Node
+node_modules/
+.pnpm-store/
+
+# SvelteKit
+apps/web/.svelte-kit/
+apps/web/build/
+
+# Tauri
+apps/desktop/src-tauri/target/
+
+# Extension
+apps/extension/.output/
+apps/extension/.wxt/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Turbo
+.turbo/

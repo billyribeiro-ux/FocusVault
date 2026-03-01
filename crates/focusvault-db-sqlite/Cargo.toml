@@ -1,0 +1,14 @@
+[package]
+name = "focusvault-db-sqlite"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+focusvault-core.workspace = true
+sqlx = { workspace = true, features = ["sqlite"] }
+uuid.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-trait = "0.1"
+tracing.workspace = true

@@ -1,0 +1,16 @@
+[package]
+name = "focusvault-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+url.workspace = true
+thiserror.workspace = true
+utoipa.workspace = true
+
+# Async trait support
+async-trait = "0.1"
