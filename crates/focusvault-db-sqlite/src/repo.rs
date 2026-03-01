@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chrono::{NaiveDate, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use focusvault_core::domain::*;
 use focusvault_core::error::{DomainError, DomainResult};
 use focusvault_core::repository::Repository;
@@ -156,6 +156,162 @@ fn row_to_language_track(row: &sqlx::sqlite::SqliteRow) -> LanguageTrack {
 
 #[async_trait]
 impl Repository for SqliteRepo {
+    // ── Users ──
+
+    async fn create_user(
+        &self,
+        id: Uuid,
+        email: &str,
+        password_hash: &str,
+        display_name: Option<&str>,
+    ) -> DomainResult<UserRow> {
+        let now = Utc::now().to_rfc3339();
+        sqlx::query(
+            "INSERT INTO users (id, email, password_hash, display_name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5)",
+        )
+        .bind(id.to_string())
+        .bind(email)
+        .bind(password_hash)
+        .bind(display_name)
+        .bind(&now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            if e.to_string().contains("UNIQUE") {
+                DomainError::duplicate("User", email.to_string())
+            } else {
+                map_db_err(e)
+            }
+        })?;
+
+        self.get_user_by_id(id)
+            .await?
+            .ok_or_else(|| DomainError::Internal("Failed to create user".into()))
+    }
+
+    async fn get_user_by_email(&self, email: &str) -> DomainResult<Option<UserRow>> {
+        let row = sqlx::query("SELECT * FROM users WHERE email = ?1 COLLATE NOCASE")
+            .bind(email)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+
+        Ok(row.map(|r| UserRow {
+            id: Uuid::parse_str(r.get::<&str, _>("id")).unwrap(),
+            email: r.get("email"),
+            password_hash: r.get("password_hash"),
+            display_name: r.get("display_name"),
+            created_at: parse_dt(r.get("created_at")),
+            updated_at: parse_dt(r.get("updated_at")),
+        }))
+    }
+
+    async fn get_user_by_id(&self, id: Uuid) -> DomainResult<Option<UserRow>> {
+        let row = sqlx::query("SELECT * FROM users WHERE id = ?1")
+            .bind(id.to_string())
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+
+        Ok(row.map(|r| UserRow {
+            id: Uuid::parse_str(r.get::<&str, _>("id")).unwrap(),
+            email: r.get("email"),
+            password_hash: r.get("password_hash"),
+            display_name: r.get("display_name"),
+            created_at: parse_dt(r.get("created_at")),
+            updated_at: parse_dt(r.get("updated_at")),
+        }))
+    }
+
+    // ── Sync Events ──
+
+    async fn insert_sync_event(&self, event: &SyncEvent) -> DomainResult<()> {
+        let entity_type = serde_json::to_value(&event.entity_type).unwrap();
+        let action = serde_json::to_value(&event.action).unwrap();
+        let payload = serde_json::to_string(&event.payload).unwrap();
+
+        sqlx::query(
+            "INSERT INTO sync_events (id, user_id, entity_type, entity_id, action, payload, device_id, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        )
+        .bind(event.id.to_string())
+        .bind(event.user_id.to_string())
+        .bind(entity_type.as_str().unwrap())
+        .bind(event.entity_id.to_string())
+        .bind(action.as_str().unwrap())
+        .bind(&payload)
+        .bind(&event.device_id)
+        .bind(event.timestamp.to_rfc3339())
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        Ok(())
+    }
+
+    async fn list_sync_events_since(
+        &self,
+        user_id: Uuid,
+        since: Option<DateTime<Utc>>,
+        exclude_device: &str,
+        limit: i64,
+    ) -> DomainResult<Vec<SyncEvent>> {
+        let rows = if let Some(since) = since {
+            sqlx::query(
+                "SELECT * FROM sync_events WHERE user_id = ?1 AND device_id != ?2 AND timestamp > ?3 ORDER BY timestamp ASC LIMIT ?4",
+            )
+            .bind(user_id.to_string())
+            .bind(exclude_device)
+            .bind(since.to_rfc3339())
+            .bind(limit)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(map_db_err)?
+        } else {
+            sqlx::query(
+                "SELECT * FROM sync_events WHERE user_id = ?1 AND device_id != ?2 ORDER BY timestamp ASC LIMIT ?3",
+            )
+            .bind(user_id.to_string())
+            .bind(exclude_device)
+            .bind(limit)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(map_db_err)?
+        };
+
+        Ok(rows
+            .iter()
+            .map(|r| SyncEvent {
+                id: Uuid::parse_str(r.get::<&str, _>("id")).unwrap(),
+                user_id: Uuid::parse_str(r.get::<&str, _>("user_id")).unwrap(),
+                entity_type: serde_json::from_value(serde_json::Value::String(
+                    r.get::<String, _>("entity_type"),
+                ))
+                .unwrap(),
+                entity_id: Uuid::parse_str(r.get::<&str, _>("entity_id")).unwrap(),
+                action: serde_json::from_value(serde_json::Value::String(
+                    r.get::<String, _>("action"),
+                ))
+                .unwrap(),
+                payload: serde_json::from_str(r.get::<&str, _>("payload")).unwrap_or_default(),
+                device_id: r.get("device_id"),
+                timestamp: parse_dt(r.get("timestamp")),
+            })
+            .collect())
+    }
+
+    async fn count_pending_sync_events(&self, user_id: Uuid, device_id: &str) -> DomainResult<i64> {
+        let row = sqlx::query(
+            "SELECT COUNT(*) as cnt FROM sync_events WHERE user_id = ?1 AND device_id != ?2",
+        )
+        .bind(user_id.to_string())
+        .bind(device_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        Ok(row.get::<i64, _>("cnt"))
+    }
+
     // ── Vault Items ──
 
     async fn list_vault_items(&self, filters: VaultFilters) -> DomainResult<Vec<VaultItem>> {

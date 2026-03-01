@@ -42,7 +42,7 @@ impl MissionService {
     }
 
     /// Activates a mission. Enforces single-active: if another mission is active,
-    /// the caller must pause or complete it first.
+    /// it is automatically paused before the new one is activated.
     pub async fn activate(&self, id: Uuid) -> DomainResult<Mission> {
         let current_active = self.repo.get_active_mission().await?;
 
@@ -51,10 +51,20 @@ impl MissionService {
                 // Already active, no-op
                 return Ok(active);
             }
-            return Err(DomainError::conflict(format!(
-                "Mission '{}' is already active. Pause or complete it first.",
-                active.name
-            )));
+            // Auto-pause the currently active mission
+            self.repo
+                .update_mission(
+                    active.id,
+                    UpdateMission {
+                        status: Some(MissionStatus::Paused),
+                        name: None,
+                        description: None,
+                        tab_limit: None,
+                        weekly_targets: None,
+                        kpis: None,
+                    },
+                )
+                .await?;
         }
 
         self.repo.activate_mission(id).await

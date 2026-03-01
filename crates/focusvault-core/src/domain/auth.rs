@@ -13,6 +13,29 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
 }
 
+/// Internal user row with password hash — never serialized to API responses.
+#[derive(Debug, Clone)]
+pub struct UserRow {
+    pub id: Uuid,
+    pub email: String,
+    pub password_hash: String,
+    pub display_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl UserRow {
+    pub fn into_user(self) -> User {
+        User {
+            id: self.id,
+            email: self.email,
+            display_name: self.display_name,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
 /// Input for creating a new user account.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CreateUser {

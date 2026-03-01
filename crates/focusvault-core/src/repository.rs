@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use uuid::Uuid;
 
 use crate::domain::*;
@@ -9,6 +9,24 @@ use crate::error::DomainResult;
 /// Implemented by PostgresRepo and SqliteRepo.
 #[async_trait]
 pub trait Repository: Send + Sync + 'static {
+    // ── Users ──
+
+    async fn create_user(&self, id: Uuid, email: &str, password_hash: &str, display_name: Option<&str>) -> DomainResult<UserRow>;
+    async fn get_user_by_email(&self, email: &str) -> DomainResult<Option<UserRow>>;
+    async fn get_user_by_id(&self, id: Uuid) -> DomainResult<Option<UserRow>>;
+
+    // ── Sync Events ──
+
+    async fn insert_sync_event(&self, event: &SyncEvent) -> DomainResult<()>;
+    async fn list_sync_events_since(
+        &self,
+        user_id: Uuid,
+        since: Option<DateTime<Utc>>,
+        exclude_device: &str,
+        limit: i64,
+    ) -> DomainResult<Vec<SyncEvent>>;
+    async fn count_pending_sync_events(&self, user_id: Uuid, device_id: &str) -> DomainResult<i64>;
+
     // ── Vault Items ──
 
     async fn list_vault_items(&self, filters: VaultFilters) -> DomainResult<Vec<VaultItem>>;
@@ -39,14 +57,8 @@ pub trait Repository: Send + Sync + 'static {
     async fn get_mission(&self, id: Uuid) -> DomainResult<Mission>;
     async fn create_mission(&self, input: CreateMission) -> DomainResult<Mission>;
     async fn update_mission(&self, id: Uuid, update: UpdateMission) -> DomainResult<Mission>;
-
-    /// Get the currently active mission, if any.
     async fn get_active_mission(&self) -> DomainResult<Option<Mission>>;
-
-    /// Deactivate all active missions (set to paused).
     async fn deactivate_all_missions(&self) -> DomainResult<()>;
-
-    /// Set a mission to active status.
     async fn activate_mission(&self, id: Uuid) -> DomainResult<Mission>;
 
     // ── Courses ──

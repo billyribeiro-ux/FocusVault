@@ -12,5 +12,13 @@ url.workspace = true
 thiserror.workspace = true
 utoipa.workspace = true
 
+# Auth
+jsonwebtoken.workspace = true
+argon2.workspace = true
+rand.workspace = true
+
 # Async trait support
 async-trait = "0.1"
+
+# Tracing
+tracing.workspace = true

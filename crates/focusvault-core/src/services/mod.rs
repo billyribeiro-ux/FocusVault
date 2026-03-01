@@ -1,3 +1,4 @@
+pub mod auth_service;
 pub mod course_service;
 pub mod daily_log_service;
 pub mod language_service;
@@ -5,6 +6,7 @@ pub mod mission_service;
 pub mod project_service;
 pub mod vault_service;
 
+pub use auth_service::AuthService;
 pub use course_service::CourseService;
 pub use daily_log_service::DailyLogService;
 pub use language_service::LanguageService;

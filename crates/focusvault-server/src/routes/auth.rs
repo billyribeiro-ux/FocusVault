@@ -1,8 +1,9 @@
+use axum::extract::State;
 use axum::Json;
 use focusvault_core::domain::*;
-use uuid::Uuid;
 
 use crate::error::ApiResult;
+use crate::state::AppState;
 
 /// Register a new user account.
 #[utoipa::path(
@@ -15,25 +16,12 @@ use crate::error::ApiResult;
     ),
     tag = "auth"
 )]
-pub async fn register(Json(input): Json<CreateUser>) -> ApiResult<Json<AuthToken>> {
-    // Phase 7 stub: In a full implementation this would:
-    // 1. Hash the password with argon2
-    // 2. Insert the user into the database
-    // 3. Generate a JWT token
-    let user = User {
-        id: Uuid::new_v4(),
-        email: input.email,
-        display_name: input.display_name,
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
-
-    Ok(Json(AuthToken {
-        access_token: user.id.to_string(),
-        token_type: "Bearer".into(),
-        expires_in: 86400,
-        user,
-    }))
+pub async fn register(
+    State(state): State<AppState>,
+    Json(input): Json<CreateUser>,
+) -> ApiResult<Json<AuthToken>> {
+    let token = state.auth.register(input).await?;
+    Ok(Json(token))
 }
 
 /// Authenticate with email and password.
@@ -47,25 +35,12 @@ pub async fn register(Json(input): Json<CreateUser>) -> ApiResult<Json<AuthToken
     ),
     tag = "auth"
 )]
-pub async fn login(Json(_input): Json<LoginRequest>) -> ApiResult<Json<AuthToken>> {
-    // Phase 7 stub: In a full implementation this would:
-    // 1. Look up user by email
-    // 2. Verify password hash
-    // 3. Generate a JWT token
-    let user = User {
-        id: Uuid::new_v4(),
-        email: "stub@focusvault.local".into(),
-        display_name: Some("Local User".into()),
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
-
-    Ok(Json(AuthToken {
-        access_token: user.id.to_string(),
-        token_type: "Bearer".into(),
-        expires_in: 86400,
-        user,
-    }))
+pub async fn login(
+    State(state): State<AppState>,
+    Json(input): Json<LoginRequest>,
+) -> ApiResult<Json<AuthToken>> {
+    let token = state.auth.login(input).await?;
+    Ok(Json(token))
 }
 
 /// Get the current authenticated user.
@@ -78,13 +53,10 @@ pub async fn login(Json(_input): Json<LoginRequest>) -> ApiResult<Json<AuthToken
     ),
     tag = "auth"
 )]
-pub async fn me(auth: crate::extractors::RequireAuth) -> ApiResult<Json<User>> {
-    let user = User {
-        id: auth.0.user_id,
-        email: "user@focusvault.local".into(),
-        display_name: Some("Authenticated User".into()),
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
+pub async fn me(
+    State(state): State<AppState>,
+    auth: crate::extractors::RequireAuth,
+) -> ApiResult<Json<User>> {
+    let user = state.auth.get_user(auth.0.user_id).await?;
     Ok(Json(user))
 }

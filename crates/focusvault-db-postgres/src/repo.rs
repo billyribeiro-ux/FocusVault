@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chrono::{NaiveDate, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use focusvault_core::domain::*;
 use focusvault_core::error::{DomainError, DomainResult};
 use focusvault_core::repository::Repository;
@@ -148,6 +148,153 @@ fn row_to_language_track(row: &sqlx::postgres::PgRow) -> LanguageTrack {
 
 #[async_trait]
 impl Repository for PostgresRepo {
+    // ── Users ──
+
+    async fn create_user(
+        &self,
+        id: Uuid,
+        email: &str,
+        password_hash: &str,
+        display_name: Option<&str>,
+    ) -> DomainResult<UserRow> {
+        let now = Utc::now();
+        sqlx::query(
+            "INSERT INTO users (id, email, password_hash, display_name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $5)",
+        )
+        .bind(id)
+        .bind(email)
+        .bind(password_hash)
+        .bind(display_name)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            if e.to_string().contains("uq_users_email") || e.to_string().contains("duplicate key") {
+                DomainError::duplicate("User", email.to_string())
+            } else {
+                map_db_err(e)
+            }
+        })?;
+
+        self.get_user_by_id(id)
+            .await?
+            .ok_or_else(|| DomainError::Internal("Failed to create user".into()))
+    }
+
+    async fn get_user_by_email(&self, email: &str) -> DomainResult<Option<UserRow>> {
+        let row = sqlx::query("SELECT * FROM users WHERE LOWER(email) = LOWER($1)")
+            .bind(email)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+
+        Ok(row.map(|r| UserRow {
+            id: r.get("id"),
+            email: r.get("email"),
+            password_hash: r.get("password_hash"),
+            display_name: r.get("display_name"),
+            created_at: r.get("created_at"),
+            updated_at: r.get("updated_at"),
+        }))
+    }
+
+    async fn get_user_by_id(&self, id: Uuid) -> DomainResult<Option<UserRow>> {
+        let row = sqlx::query("SELECT * FROM users WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+
+        Ok(row.map(|r| UserRow {
+            id: r.get("id"),
+            email: r.get("email"),
+            password_hash: r.get("password_hash"),
+            display_name: r.get("display_name"),
+            created_at: r.get("created_at"),
+            updated_at: r.get("updated_at"),
+        }))
+    }
+
+    // ── Sync Events ──
+
+    async fn insert_sync_event(&self, event: &SyncEvent) -> DomainResult<()> {
+        let entity_type = serde_json::to_value(&event.entity_type).unwrap();
+        let action = serde_json::to_value(&event.action).unwrap();
+
+        sqlx::query(
+            "INSERT INTO sync_events (id, user_id, entity_type, entity_id, action, payload, device_id, timestamp) \
+             VALUES ($1, $2, $3::sync_entity_type, $4, $5::sync_action, $6, $7, $8)",
+        )
+        .bind(event.id)
+        .bind(event.user_id)
+        .bind(entity_type.as_str().unwrap())
+        .bind(event.entity_id)
+        .bind(action.as_str().unwrap())
+        .bind(&event.payload)
+        .bind(&event.device_id)
+        .bind(event.timestamp)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        Ok(())
+    }
+
+    async fn list_sync_events_since(
+        &self,
+        user_id: Uuid,
+        since: Option<DateTime<Utc>>,
+        exclude_device: &str,
+        limit: i64,
+    ) -> DomainResult<Vec<SyncEvent>> {
+        let rows = sqlx::query(
+            "SELECT id, user_id, entity_type::text, entity_id, action::text, payload, device_id, timestamp \
+             FROM sync_events \
+             WHERE user_id = $1 AND device_id != $2 AND ($3::timestamptz IS NULL OR timestamp > $3) \
+             ORDER BY timestamp ASC LIMIT $4",
+        )
+        .bind(user_id)
+        .bind(exclude_device)
+        .bind(since)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        Ok(rows
+            .iter()
+            .map(|r| SyncEvent {
+                id: r.get("id"),
+                user_id: r.get("user_id"),
+                entity_type: serde_json::from_value(serde_json::Value::String(
+                    r.get::<String, _>("entity_type"),
+                ))
+                .unwrap(),
+                entity_id: r.get("entity_id"),
+                action: serde_json::from_value(serde_json::Value::String(
+                    r.get::<String, _>("action"),
+                ))
+                .unwrap(),
+                payload: r.get("payload"),
+                device_id: r.get("device_id"),
+                timestamp: r.get("timestamp"),
+            })
+            .collect())
+    }
+
+    async fn count_pending_sync_events(&self, user_id: Uuid, device_id: &str) -> DomainResult<i64> {
+        let row = sqlx::query(
+            "SELECT COUNT(*) as cnt FROM sync_events WHERE user_id = $1 AND device_id != $2",
+        )
+        .bind(user_id)
+        .bind(device_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        Ok(row.get::<i64, _>("cnt"))
+    }
+
     // ── Vault Items ──
 
     async fn list_vault_items(&self, filters: VaultFilters) -> DomainResult<Vec<VaultItem>> {

@@ -1,8 +1,14 @@
+use axum::extract::State;
 use axum::Json;
+use chrono::Utc;
 use focusvault_core::domain::*;
+use uuid::Uuid;
 
 use crate::error::ApiResult;
 use crate::extractors::RequireAuth;
+use crate::state::AppState;
+
+const SYNC_PAGE_SIZE: i64 = 100;
 
 /// Push local changes to the server.
 #[utoipa::path(
@@ -16,20 +22,35 @@ use crate::extractors::RequireAuth;
     tag = "sync"
 )]
 pub async fn sync_push(
-    _auth: RequireAuth,
+    State(state): State<AppState>,
+    auth: RequireAuth,
     Json(request): Json<SyncPushRequest>,
 ) -> ApiResult<Json<SyncPushResponse>> {
-    // Phase 7 stub: In a full implementation this would:
-    // 1. Validate each event against the server's current state
-    // 2. Apply non-conflicting changes
-    // 3. Return conflicts for last-write-wins resolution
+    let mut accepted = 0i32;
+    let conflicts: Vec<SyncConflict> = vec![];
 
-    let accepted = request.events.len() as i32;
+    for event in &request.events {
+        let sync_event = SyncEvent {
+            id: Uuid::new_v4(),
+            user_id: auth.0.user_id,
+            entity_type: event.entity_type.clone(),
+            entity_id: event.entity_id,
+            action: event.action.clone(),
+            payload: event.payload.clone(),
+            device_id: request.device_id.clone(),
+            timestamp: event.timestamp,
+        };
+
+        // Last-write-wins: store the event. The pull side delivers events
+        // chronologically so newer writes naturally overwrite older ones.
+        state.repo.insert_sync_event(&sync_event).await?;
+        accepted += 1;
+    }
 
     Ok(Json(SyncPushResponse {
         accepted,
-        conflicts: vec![],
-        server_time: chrono::Utc::now(),
+        conflicts,
+        server_time: Utc::now(),
     }))
 }
 
@@ -45,18 +66,30 @@ pub async fn sync_push(
     tag = "sync"
 )]
 pub async fn sync_pull(
-    _auth: RequireAuth,
-    Json(_request): Json<SyncPullRequest>,
+    State(state): State<AppState>,
+    auth: RequireAuth,
+    Json(request): Json<SyncPullRequest>,
 ) -> ApiResult<Json<SyncPullResponse>> {
-    // Phase 7 stub: In a full implementation this would:
-    // 1. Query all sync events after last_synced_at for this user
-    // 2. Exclude events from the requesting device
-    // 3. Return paginated results
+    let events = state
+        .repo
+        .list_sync_events_since(
+            auth.0.user_id,
+            request.last_synced_at,
+            &request.device_id,
+            SYNC_PAGE_SIZE + 1,
+        )
+        .await?;
+
+    let has_more = events.len() as i64 > SYNC_PAGE_SIZE;
+    let events: Vec<SyncEvent> = events
+        .into_iter()
+        .take(SYNC_PAGE_SIZE as usize)
+        .collect();
 
     Ok(Json(SyncPullResponse {
-        events: vec![],
-        server_time: chrono::Utc::now(),
-        has_more: false,
+        events,
+        server_time: Utc::now(),
+        has_more,
     }))
 }
 
@@ -70,11 +103,19 @@ pub async fn sync_pull(
     ),
     tag = "sync"
 )]
-pub async fn sync_status(_auth: RequireAuth) -> ApiResult<Json<SyncStatus>> {
+pub async fn sync_status(
+    State(state): State<AppState>,
+    auth: RequireAuth,
+) -> ApiResult<Json<SyncStatus>> {
+    let pending = state
+        .repo
+        .count_pending_sync_events(auth.0.user_id, "server")
+        .await?;
+
     Ok(Json(SyncStatus {
         device_id: "server".into(),
-        last_synced_at: Some(chrono::Utc::now()),
-        pending_changes: 0,
+        last_synced_at: Some(Utc::now()),
+        pending_changes: pending as i32,
         is_online: true,
     }))
 }

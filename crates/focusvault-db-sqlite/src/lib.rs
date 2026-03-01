@@ -25,10 +25,13 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
         .await?;
 
     let migration_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
-    let sql = std::fs::read_to_string(migration_path.join("001_initial_schema.sql"))
-        .expect("Failed to read SQLite migration file");
 
-    sqlx::raw_sql(&sql).execute(pool).await?;
+    let files = ["001_initial_schema.sql", "002_auth_sync.sql"];
+    for file in &files {
+        let sql = std::fs::read_to_string(migration_path.join(file))
+            .unwrap_or_else(|_| panic!("Failed to read migration file: {file}"));
+        sqlx::raw_sql(&sql).execute(pool).await?;
+    }
 
     Ok(())
 }

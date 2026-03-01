@@ -7,6 +7,7 @@ pub struct Config {
     pub database_url: String,
     pub frontend_url: String,
     pub db_backend: DbBackend,
+    pub jwt_secret: String,
 }
 
 #[derive(Debug, Clone)]
@@ -26,6 +27,17 @@ impl Config {
             DbBackend::Sqlite
         };
 
+        let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| {
+            tracing::warn!("JWT_SECRET not set — using random ephemeral secret. Tokens will not survive restarts.");
+            use rand::Rng;
+            let secret: String = rand::thread_rng()
+                .sample_iter(&rand::distributions::Alphanumeric)
+                .take(64)
+                .map(char::from)
+                .collect();
+            secret
+        });
+
         Self {
             host: env::var("HOST").unwrap_or_else(|_| "127.0.0.1".into()),
             port: env::var("PORT")
@@ -36,6 +48,7 @@ impl Config {
             frontend_url: env::var("FRONTEND_URL")
                 .unwrap_or_else(|_| "http://localhost:5173".into()),
             db_backend,
+            jwt_secret,
         }
     }
 

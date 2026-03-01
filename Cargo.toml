@@ -51,11 +51,18 @@ utoipa-swagger-ui = { version = "9", features = ["axum"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
+# Auth
+jsonwebtoken = "9"
+argon2 = "0.5"
+rand = "0.8"
+
 # Config
 dotenvy = "0.15"
 
 # Testing
 tower-service = "0.3"
+http-body-util = "0.1"
+hyper = { version = "1", features = ["full"] }
 
 # Internal crates
 focusvault-core = { path = "crates/focusvault-core" }

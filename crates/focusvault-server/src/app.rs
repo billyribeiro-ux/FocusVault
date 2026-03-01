@@ -124,6 +124,9 @@ pub fn create_router(state: AppState) -> Router {
             header::ACCEPT,
         ]);
 
+    // Clone state for the extension layer so the auth middleware can access it
+    let state_for_ext = state.clone();
+
     let api_routes = Router::new()
         // Health
         .route("/health", get(health::health_check))
@@ -184,8 +187,11 @@ pub fn create_router(state: AppState) -> Router {
         .route("/sync/push", post(sync::sync_push))
         .route("/sync/pull", post(sync::sync_pull))
         .route("/sync/status", get(sync::sync_status))
-        // Apply optional auth middleware to all API routes
-        .layer(middleware::from_fn(optional_auth));
+        // Layer order matters: last-added = outermost = runs first.
+        // 1. optional_auth (inner) — reads AppState from extensions to validate JWT
+        // 2. Extension (outer) — injects AppState into request extensions before auth runs
+        .layer(middleware::from_fn(optional_auth))
+        .layer(axum::Extension(state_for_ext));
 
     Router::new()
         .merge(SwaggerUi::new("/api/docs").url("/api/docs/openapi.json", ApiDoc::openapi()))
