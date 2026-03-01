@@ -9,7 +9,10 @@ pub enum DomainError {
     NotFound { entity: &'static str, id: String },
 
     #[error("Duplicate {entity}: {detail}")]
-    Duplicate { entity: &'static str, detail: String },
+    Duplicate {
+        entity: &'static str,
+        detail: String,
+    },
 
     #[error("Conflict: {0}")]
     Conflict(String),

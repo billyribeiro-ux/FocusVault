@@ -683,10 +683,13 @@ impl Repository for PostgresRepo {
     async fn upsert_daily_log(&self, input: UpsertDailyLog) -> DomainResult<DailyLog> {
         let id = Uuid::new_v4();
         let now = Utc::now();
-        let mood_str = input
-            .mood
-            .as_ref()
-            .map(|m| serde_json::to_value(m).unwrap().as_str().unwrap().to_string());
+        let mood_str = input.mood.as_ref().map(|m| {
+            serde_json::to_value(m)
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string()
+        });
 
         sqlx::query(
             "INSERT INTO daily_logs (id, date, plan_day, cycles_completed, watch_done, build_done, prove_done, \

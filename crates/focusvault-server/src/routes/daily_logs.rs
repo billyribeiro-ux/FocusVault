@@ -14,9 +14,7 @@ use crate::state::AppState;
     responses((status = 200, description = "Today's daily log (auto-created if needed)", body = DailyLog)),
     tag = "daily_logs"
 )]
-pub async fn get_today(
-    State(state): State<AppState>,
-) -> ApiResult<Json<DailyLog>> {
+pub async fn get_today(State(state): State<AppState>) -> ApiResult<Json<DailyLog>> {
     let today = Utc::now().date_naive();
     let log = state
         .daily_logs

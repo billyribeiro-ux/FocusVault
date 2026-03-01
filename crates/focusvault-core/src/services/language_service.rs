@@ -20,9 +20,7 @@ impl LanguageService {
 
     pub async fn create(&self, input: CreateLanguageTrack) -> DomainResult<LanguageTrack> {
         if input.name.trim().is_empty() {
-            return Err(DomainError::validation(
-                "Language track name is required",
-            ));
+            return Err(DomainError::validation("Language track name is required"));
         }
         self.repo.create_language_track(input).await
     }

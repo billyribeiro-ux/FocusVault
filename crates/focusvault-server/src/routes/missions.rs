@@ -14,9 +14,7 @@ use crate::state::AppState;
     responses((status = 200, description = "List missions", body = Vec<Mission>)),
     tag = "missions"
 )]
-pub async fn list_missions(
-    State(state): State<AppState>,
-) -> ApiResult<Json<Vec<Mission>>> {
+pub async fn list_missions(State(state): State<AppState>) -> ApiResult<Json<Vec<Mission>>> {
     let missions = state.missions.list().await.map_err(ApiError::from)?;
     Ok(Json(missions))
 }

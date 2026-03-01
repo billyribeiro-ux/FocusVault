@@ -14,9 +14,7 @@ use crate::state::AppState;
     responses((status = 200, description = "List projects", body = Vec<Project>)),
     tag = "projects"
 )]
-pub async fn list_projects(
-    State(state): State<AppState>,
-) -> ApiResult<Json<Vec<Project>>> {
+pub async fn list_projects(State(state): State<AppState>) -> ApiResult<Json<Vec<Project>>> {
     let projects = state.projects.list().await.map_err(ApiError::from)?;
     Ok(Json(projects))
 }
@@ -55,6 +53,10 @@ pub async fn update_project(
     Path(id): Path<Uuid>,
     Json(update): Json<UpdateProject>,
 ) -> ApiResult<Json<Project>> {
-    let project = state.projects.update(id, update).await.map_err(ApiError::from)?;
+    let project = state
+        .projects
+        .update(id, update)
+        .await
+        .map_err(ApiError::from)?;
     Ok(Json(project))
 }

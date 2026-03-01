@@ -11,7 +11,13 @@ use crate::error::DomainResult;
 pub trait Repository: Send + Sync + 'static {
     // ── Users ──
 
-    async fn create_user(&self, id: Uuid, email: &str, password_hash: &str, display_name: Option<&str>) -> DomainResult<UserRow>;
+    async fn create_user(
+        &self,
+        id: Uuid,
+        email: &str,
+        password_hash: &str,
+        display_name: Option<&str>,
+    ) -> DomainResult<UserRow>;
     async fn get_user_by_email(&self, email: &str) -> DomainResult<Option<UserRow>>;
     async fn get_user_by_id(&self, id: Uuid) -> DomainResult<Option<UserRow>>;
 
@@ -32,7 +38,8 @@ pub trait Repository: Send + Sync + 'static {
     async fn list_vault_items(&self, filters: VaultFilters) -> DomainResult<Vec<VaultItem>>;
     async fn get_vault_item(&self, id: Uuid) -> DomainResult<VaultItem>;
     async fn create_vault_item(&self, item: CreateVaultItem) -> DomainResult<VaultItem>;
-    async fn update_vault_item(&self, id: Uuid, update: UpdateVaultItem) -> DomainResult<VaultItem>;
+    async fn update_vault_item(&self, id: Uuid, update: UpdateVaultItem)
+        -> DomainResult<VaultItem>;
     async fn delete_vault_item(&self, id: Uuid) -> DomainResult<()>;
 
     /// Count items in inbox that haven't been opened in `hours` hours.
@@ -49,7 +56,11 @@ pub trait Repository: Send + Sync + 'static {
     async fn list_daily_logs(&self, filters: DailyLogFilters) -> DomainResult<Vec<DailyLog>>;
     async fn get_daily_log_by_date(&self, date: NaiveDate) -> DomainResult<Option<DailyLog>>;
     async fn upsert_daily_log(&self, input: UpsertDailyLog) -> DomainResult<DailyLog>;
-    async fn update_daily_log(&self, date: NaiveDate, update: UpdateDailyLog) -> DomainResult<DailyLog>;
+    async fn update_daily_log(
+        &self,
+        date: NaiveDate,
+        update: UpdateDailyLog,
+    ) -> DomainResult<DailyLog>;
 
     // ── Missions ──
 
@@ -76,7 +87,10 @@ pub trait Repository: Send + Sync + 'static {
 
     async fn list_language_tracks(&self) -> DomainResult<Vec<LanguageTrack>>;
     async fn get_language_track(&self, id: Uuid) -> DomainResult<LanguageTrack>;
-    async fn create_language_track(&self, input: CreateLanguageTrack) -> DomainResult<LanguageTrack>;
+    async fn create_language_track(
+        &self,
+        input: CreateLanguageTrack,
+    ) -> DomainResult<LanguageTrack>;
     async fn update_language_track(
         &self,
         id: Uuid,

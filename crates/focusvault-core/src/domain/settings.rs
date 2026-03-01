@@ -22,17 +22,8 @@ impl Default for GlobalSettings {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct DeviceSettings {
     pub desktop_mode: bool,
     pub local_db_path: Option<String>,
-}
-
-impl Default for DeviceSettings {
-    fn default() -> Self {
-        Self {
-            desktop_mode: false,
-            local_db_path: None,
-        }
-    }
 }

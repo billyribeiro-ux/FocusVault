@@ -57,11 +57,7 @@ pub async fn activate_language_track(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<LanguageTrack>> {
-    let track = state
-        .languages
-        .activate(id)
-        .await
-        .map_err(ApiError::from)?;
+    let track = state.languages.activate(id).await.map_err(ApiError::from)?;
     Ok(Json(track))
 }
 
@@ -76,10 +72,6 @@ pub async fn complete_language_track(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<LanguageTrack>> {
-    let track = state
-        .languages
-        .complete(id)
-        .await
-        .map_err(ApiError::from)?;
+    let track = state.languages.complete(id).await.map_err(ApiError::from)?;
     Ok(Json(track))
 }

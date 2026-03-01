@@ -49,8 +49,10 @@ fn row_to_vault_item(row: &sqlx::sqlite::SqliteRow) -> VaultItem {
 
     VaultItem {
         id: Uuid::parse_str(row.get::<&str, _>("id")).unwrap(),
-        item_type: serde_json::from_value(serde_json::Value::String(row.get::<String, _>("item_type")))
-            .unwrap_or(VaultItemType::Note),
+        item_type: serde_json::from_value(serde_json::Value::String(
+            row.get::<String, _>("item_type"),
+        ))
+        .unwrap_or(VaultItemType::Note),
         url: row.get("url"),
         title: row.get("title"),
         favicon_url: row.get("favicon_url"),
@@ -59,8 +61,10 @@ fn row_to_vault_item(row: &sqlx::sqlite::SqliteRow) -> VaultItem {
         notes: row.get("notes"),
         status: serde_json::from_value(serde_json::Value::String(row.get::<String, _>("status")))
             .unwrap_or(VaultItemStatus::Inbox),
-        priority: serde_json::from_value(serde_json::Value::String(row.get::<String, _>("priority")))
-            .unwrap_or(Priority::Med),
+        priority: serde_json::from_value(serde_json::Value::String(
+            row.get::<String, _>("priority"),
+        ))
+        .unwrap_or(Priority::Med),
         pinned: row.get::<i32, _>("pinned") != 0,
         tags,
         project_id: project_id_str.and_then(|s| Uuid::parse_str(&s).ok()),
@@ -106,9 +110,7 @@ fn row_to_daily_log(row: &sqlx::sqlite::SqliteRow) -> DailyLog {
         build_done: row.get::<i32, _>("build_done") != 0,
         prove_done: row.get::<i32, _>("prove_done") != 0,
         tab_limit: row.get("tab_limit"),
-        tab_limit_met: row
-            .get::<Option<i32>, _>("tab_limit_met")
-            .map(|v| v != 0),
+        tab_limit_met: row.get::<Option<i32>, _>("tab_limit_met").map(|v| v != 0),
         active_mission_id: row
             .get::<Option<String>, _>("active_mission_id")
             .and_then(|s| Uuid::parse_str(&s).ok()),
@@ -617,14 +619,12 @@ impl Repository for SqliteRepo {
         let limit = filters.limit.unwrap_or(30);
         let offset = filters.offset.unwrap_or(0);
 
-        let rows = sqlx::query(
-            "SELECT * FROM daily_logs ORDER BY date DESC LIMIT ?1 OFFSET ?2",
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(map_db_err)?;
+        let rows = sqlx::query("SELECT * FROM daily_logs ORDER BY date DESC LIMIT ?1 OFFSET ?2")
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(map_db_err)?;
 
         Ok(rows.iter().map(row_to_daily_log).collect())
     }
@@ -643,10 +643,13 @@ impl Repository for SqliteRepo {
         let id = Uuid::new_v4();
         let now = Utc::now().to_rfc3339();
         let date_str = input.date.to_string();
-        let mood_str = input
-            .mood
-            .as_ref()
-            .map(|m| serde_json::to_value(m).unwrap().as_str().unwrap().to_string());
+        let mood_str = input.mood.as_ref().map(|m| {
+            serde_json::to_value(m)
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string()
+        });
 
         // Try insert, on conflict update
         sqlx::query(
@@ -1029,12 +1032,14 @@ impl Repository for SqliteRepo {
 
     async fn complete_language_track(&self, id: Uuid) -> DomainResult<LanguageTrack> {
         let now = Utc::now().to_rfc3339();
-        sqlx::query("UPDATE language_tracks SET status = 'completed', completed_at = ?1 WHERE id = ?2")
-            .bind(&now)
-            .bind(id.to_string())
-            .execute(&self.pool)
-            .await
-            .map_err(map_db_err)?;
+        sqlx::query(
+            "UPDATE language_tracks SET status = 'completed', completed_at = ?1 WHERE id = ?2",
+        )
+        .bind(&now)
+        .bind(id.to_string())
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
 
         self.get_language_track(id).await
     }

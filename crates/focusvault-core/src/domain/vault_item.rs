@@ -12,48 +12,33 @@ pub enum VaultItemType {
     FileRef,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum VaultItemStatus {
+    #[default]
     Inbox,
     Saved,
     Actioned,
     Archived,
 }
 
-impl Default for VaultItemStatus {
-    fn default() -> Self {
-        Self::Inbox
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Priority {
     Low,
+    #[default]
     Med,
     High,
 }
 
-impl Default for Priority {
-    fn default() -> Self {
-        Self::Med
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum CaptureSource {
+    #[default]
     Manual,
     Extension,
     Import,
     Api,
-}
-
-impl Default for CaptureSource {
-    fn default() -> Self {
-        Self::Manual
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

@@ -32,7 +32,8 @@ pub async fn optional_auth(mut req: Request, next: Next) -> Response {
                 let jwt_secret = extract_jwt_secret(&req);
                 if let Some(secret) = jwt_secret {
                     let key = DecodingKey::from_secret(secret.as_bytes());
-                    if let Ok(token_data) = decode::<JwtClaims>(token, &key, &Validation::default()) {
+                    if let Ok(token_data) = decode::<JwtClaims>(token, &key, &Validation::default())
+                    {
                         if let Ok(user_id) = Uuid::parse_str(&token_data.claims.sub) {
                             req.extensions_mut().insert(AuthUser {
                                 user_id,

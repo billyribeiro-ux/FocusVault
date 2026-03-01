@@ -16,13 +16,9 @@ pub async fn create_pool(database_url: &str) -> Result<SqlitePool, sqlx::Error> 
 
 pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     // Enable WAL mode for better concurrent read performance
-    sqlx::query("PRAGMA journal_mode=WAL")
-        .execute(pool)
-        .await?;
+    sqlx::query("PRAGMA journal_mode=WAL").execute(pool).await?;
 
-    sqlx::query("PRAGMA foreign_keys=ON")
-        .execute(pool)
-        .await?;
+    sqlx::query("PRAGMA foreign_keys=ON").execute(pool).await?;
 
     let migration_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
 

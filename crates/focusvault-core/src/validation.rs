@@ -14,9 +14,7 @@ pub fn validate_why(why: &str) -> DomainResult<()> {
 
     let word_count = trimmed.split_whitespace().count();
     if word_count < 3 {
-        return Err(DomainError::validation(
-            "Why must contain at least 3 words",
-        ));
+        return Err(DomainError::validation("Why must contain at least 3 words"));
     }
 
     Ok(())
@@ -37,8 +35,8 @@ pub fn normalize_url(raw: &str) -> DomainResult<String> {
         trimmed.to_string()
     };
 
-    let mut parsed =
-        Url::parse(&with_scheme).map_err(|e| DomainError::validation(format!("Invalid URL: {e}")))?;
+    let mut parsed = Url::parse(&with_scheme)
+        .map_err(|e| DomainError::validation(format!("Invalid URL: {e}")))?;
 
     // Strip common tracking parameters
     let tracking_params = [
@@ -81,7 +79,9 @@ pub fn normalize_url(raw: &str) -> DomainResult<String> {
 
 /// Extracts the hostname from a URL string.
 pub fn extract_hostname(url: &str) -> Option<String> {
-    Url::parse(url).ok().and_then(|u| u.host_str().map(String::from))
+    Url::parse(url)
+        .ok()
+        .and_then(|u| u.host_str().map(String::from))
 }
 
 #[cfg(test)]

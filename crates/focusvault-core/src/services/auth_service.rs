@@ -56,7 +56,12 @@ impl AuthService {
 
         let row = self
             .repo
-            .create_user(user_id, &email, &password_hash, input.display_name.as_deref())
+            .create_user(
+                user_id,
+                &email,
+                &password_hash,
+                input.display_name.as_deref(),
+            )
             .await?;
 
         let user = row.into_user();

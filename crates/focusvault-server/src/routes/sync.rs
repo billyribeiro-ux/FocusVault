@@ -81,10 +81,7 @@ pub async fn sync_pull(
         .await?;
 
     let has_more = events.len() as i64 > SYNC_PAGE_SIZE;
-    let events: Vec<SyncEvent> = events
-        .into_iter()
-        .take(SYNC_PAGE_SIZE as usize)
-        .collect();
+    let events: Vec<SyncEvent> = events.into_iter().take(SYNC_PAGE_SIZE as usize).collect();
 
     Ok(Json(SyncPullResponse {
         events,
