@@ -37,7 +37,7 @@
 		</div>
 
 		<div class="flex flex-1 flex-col gap-1 px-2">
-			{#each navItems as item}
+			{#each navItems as item (item.href)}
 				<a
 					href={item.href}
 					class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
