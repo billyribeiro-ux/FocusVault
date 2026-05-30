@@ -10,9 +10,9 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "wxt": "^0.19.0"
+    "wxt": "^0.20.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "typescript": "^6.0.0"
   }
 }

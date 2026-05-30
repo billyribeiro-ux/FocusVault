@@ -29,9 +29,9 @@ impl Config {
 
         let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| {
             tracing::warn!("JWT_SECRET not set — using random ephemeral secret. Tokens will not survive restarts.");
-            use rand::Rng;
-            let secret: String = rand::thread_rng()
-                .sample_iter(&rand::distributions::Alphanumeric)
+            use rand::RngExt;
+            let secret: String = rand::rng()
+                .sample_iter(&rand::distr::Alphanumeric)
                 .take(64)
                 .map(char::from)
                 .collect();

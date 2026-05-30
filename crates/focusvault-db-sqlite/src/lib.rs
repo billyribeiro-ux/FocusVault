@@ -1,4 +1,4 @@
-use sqlx::SqlitePool;
+use sqlx::{AssertSqlSafe, SqlitePool};
 use std::path::Path;
 
 pub mod repo;
@@ -26,7 +26,7 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     for file in &files {
         let sql = std::fs::read_to_string(migration_path.join(file))
             .unwrap_or_else(|_| panic!("Failed to read migration file: {file}"));
-        sqlx::raw_sql(&sql).execute(pool).await?;
+        sqlx::raw_sql(AssertSqlSafe(sql)).execute(pool).await?;
     }
 
     Ok(())

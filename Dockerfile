@@ -1,6 +1,6 @@
 # ── Stage 1: Build Frontend ──
-FROM node:20-alpine AS frontend-builder
-RUN corepack enable && corepack prepare pnpm@9 --activate
+FROM node:24-alpine AS frontend-builder
+RUN corepack enable && corepack prepare pnpm@11 --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -11,7 +11,7 @@ COPY apps/web apps/web
 RUN pnpm --filter web build
 
 # ── Stage 2: Build Rust Backend ──
-FROM rust:1.82-bookworm AS backend-builder
+FROM rust:1.96-bookworm AS backend-builder
 WORKDIR /app
 
 # Cache dependencies: copy manifests first, build a dummy to populate cache

@@ -70,7 +70,7 @@
 	function handlePlanDayChange(value: number) {
 		const clamped = Math.max(1, Math.min(30, value));
 		planDay = clamped;
-		dailyLogStore.updateToday({ plan_day: clamped });
+		dailyLogStore.updateToday({ plan_day: String(clamped) });
 	}
 
 	async function handleEndOfDay() {

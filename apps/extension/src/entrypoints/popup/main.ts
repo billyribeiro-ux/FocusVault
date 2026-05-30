@@ -1,3 +1,4 @@
+import { browser } from '#imports';
 import { api } from '../../lib/api';
 
 const $title = document.getElementById('title') as HTMLInputElement;
@@ -17,7 +18,7 @@ const $tabCounter = document.getElementById('tab-counter') as HTMLDivElement;
 
 async function init() {
   // Fill in current tab info
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (tab) {
     $title.value = tab.title || '';
     $url.value = tab.url || '';
@@ -45,7 +46,7 @@ async function init() {
 
 async function updateTabCount() {
   try {
-    const tabs = await chrome.tabs.query({});
+    const tabs = await browser.tabs.query({});
     const count = tabs.length;
     $tabCurrent.textContent = String(count);
 

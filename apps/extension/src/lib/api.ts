@@ -3,15 +3,17 @@
  * Talks to the local FocusVault server.
  */
 
+import { browser } from '#imports';
+
 const DEFAULT_API_URL = 'http://localhost:3000/api/v1';
 
 export async function getApiUrl(): Promise<string> {
-  const result = await chrome.storage.local.get('apiUrl');
-  return result.apiUrl || DEFAULT_API_URL;
+  const result = await browser.storage.local.get('apiUrl');
+  return (result.apiUrl as string) || DEFAULT_API_URL;
 }
 
 export async function setApiUrl(url: string): Promise<void> {
-  await chrome.storage.local.set({ apiUrl: url });
+  await browser.storage.local.set({ apiUrl: url });
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {

@@ -360,7 +360,7 @@ impl Repository for SqliteRepo {
             bind_idx + 1
         );
 
-        let mut query = sqlx::query(&sql);
+        let mut query = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()));
 
         // Bind parameters in same order as conditions
         if let Some(ref status) = filters.status {

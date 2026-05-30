@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "svelte": {
+      "type": "http",
+      "url": "https://mcp.svelte.dev/mcp"
+    },
+    "rust-analyzer": {
+      "type": "stdio",
+      "command": "rust-analyzer-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}

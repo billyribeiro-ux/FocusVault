@@ -36,12 +36,22 @@ fn main() {
             tracing::info!("Database path: {}", db_path.display());
 
             // Start the embedded API server on a random port
+            let jwt_secret = {
+                use rand::Rng;
+                rand::rng()
+                    .sample_iter(&rand::distr::Alphanumeric)
+                    .take(64)
+                    .map(char::from)
+                    .collect()
+            };
+
             let config = Config {
                 host: "127.0.0.1".into(),
                 port: 0, // OS assigns a free port
                 database_url: db_url,
                 frontend_url: "tauri://localhost".into(),
                 db_backend: focusvault_server::config::DbBackend::Sqlite,
+                jwt_secret,
             };
 
             let handle = app.handle().clone();

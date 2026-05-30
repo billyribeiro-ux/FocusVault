@@ -345,7 +345,7 @@ impl Repository for PostgresRepo {
             bind_idx + 1
         );
 
-        let mut query = sqlx::query(&sql);
+        let mut query = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()));
 
         if let Some(ref status) = filters.status {
             let s = serde_json::to_value(status).unwrap();
