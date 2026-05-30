@@ -116,11 +116,10 @@
 </script>
 
 {#if open}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<!-- svelte-ignore a11y_interactive_supports_focus -->
 	<div
 		class="modal-backdrop"
 		role="dialog"
+		tabindex="-1"
 		aria-modal="true"
 		aria-label="Create vault item"
 		onclick={handleBackdropClick}
@@ -142,7 +141,7 @@
 					<!-- svelte-ignore a11y_label_has_associated_control -->
 					<label class="form-label">Type</label>
 					<div class="type-selector">
-						{#each typeOptions as opt}
+						{#each typeOptions as opt (opt.value)}
 							<button
 								type="button"
 								class="type-btn"
@@ -221,7 +220,7 @@
 					<!-- svelte-ignore a11y_label_has_associated_control -->
 					<label class="form-label">Priority</label>
 					<div class="priority-selector">
-						{#each priorityOptions as opt}
+						{#each priorityOptions as opt (opt.value)}
 							<button
 								type="button"
 								class="priority-btn priority-{opt.value}"
@@ -238,7 +237,7 @@
 				<div class="form-group">
 					<label class="form-label" for="vault-tags">Tags</label>
 					<div class="tags-container">
-						{#each tags as tag}
+						{#each tags as tag (tag)}
 							<span class="tag-chip">
 								{tag}
 								<button type="button" class="tag-remove" onclick={() => removeTag(tag)}>
