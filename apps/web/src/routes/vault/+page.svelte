@@ -169,7 +169,7 @@
 
 	<!-- Pipeline Tabs -->
 	<div class="tabs-container">
-		{#each tabs as tab}
+		{#each tabs as tab (tab.id)}
 			<button
 				class="tab-btn"
 				class:tab-active={vaultStore.activeStatus === tab.id}
@@ -268,7 +268,7 @@
 							<div class="item-meta">
 								{#if item.tags.length > 0}
 									<div class="item-tags">
-										{#each item.tags.slice(0, 3) as tag}
+										{#each item.tags.slice(0, 3) as tag (tag)}
 											<span class="item-tag">{tag}</span>
 										{/each}
 										{#if item.tags.length > 3}
